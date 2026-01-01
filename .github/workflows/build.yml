@@ -1,4 +1,4 @@
-name: Build KT6PRO Stable Firmware
+name: Build KT6PRO Stable
 
 on:
   workflow_dispatch:
@@ -10,14 +10,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Free Disk Space
+      - name: Initialization environment
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
-          sudo apt-get clean
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext libssl-dev xsltproc rsync wget unzip zlib1g-dev
 
-      - name: Update and Install Feeds
+      - name: Clone Source Code
         run: |
-          # هنا قمنا بتحديد النسخة المستقرة v23.05.4
           git clone -b v23.05.4 --depth 1 https://github.com/immortalwrt/immortalwrt.git openwrt
           cd openwrt
           ./scripts/feeds update -a
@@ -25,14 +24,15 @@ jobs:
 
       - name: Load Custom Config
         run: |
-          cp kt6pro.config openwrt/.config
+          if [ -f kt6pro.config ]; then
+            cp kt6pro.config openwrt/.config
+          fi
           cd openwrt
           make defconfig
 
       - name: Build Firmware
         run: |
           cd openwrt
-          # البناء المستقر قد يستغرق وقتاً أطول قليلاً لضمان الجودة
           make -j$(nproc) || make -j1 V=s
 
       - name: Upload Artifact
