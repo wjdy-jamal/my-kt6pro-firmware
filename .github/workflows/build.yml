@@ -10,32 +10,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Initialization environment
+      - name: Initialization
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext libssl-dev xsltproc rsync wget unzip zlib1g-dev
-
-      - name: Clone Source Code
+          sudo apt-get install -y build-essential libncurses5-dev gawk git gettext libssl-dev xsltproc rsync wget unzip zlib1g-dev python3
+          
+      - name: Clone Source
         run: |
           git clone -b v23.05.4 --depth 1 https://github.com/immortalwrt/immortalwrt.git openwrt
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Load Custom Config
+      - name: Load Config
         run: |
-          if [ -f kt6pro.config ]; then
-            cp kt6pro.config openwrt/.config
-          fi
+          [ -f kt6pro.config ] && cp kt6pro.config openwrt/.config || echo "No config found"
           cd openwrt
           make defconfig
 
-      - name: Build Firmware
+      - name: Build
         run: |
           cd openwrt
           make -j$(nproc) || make -j1 V=s
 
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: KT6PRO_Stable_Binaries
