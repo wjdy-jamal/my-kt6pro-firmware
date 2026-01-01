@@ -1,4 +1,4 @@
-name: Build KT6PRO Firmware
+name: Build KT6PRO Stable Firmware
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Free Disk Space
         run: |
@@ -17,7 +17,8 @@ jobs:
 
       - name: Update and Install Feeds
         run: |
-          git clone --depth 1 https://github.com/immortalwrt/immortalwrt.git openwrt
+          # هنا قمنا بتحديد النسخة المستقرة v23.05.4
+          git clone -b v23.05.4 --depth 1 https://github.com/immortalwrt/immortalwrt.git openwrt
           cd openwrt
           ./scripts/feeds update -a
           ./scripts/feeds install -a
@@ -31,10 +32,11 @@ jobs:
       - name: Build Firmware
         run: |
           cd openwrt
+          # البناء المستقر قد يستغرق وقتاً أطول قليلاً لضمان الجودة
           make -j$(nproc) || make -j1 V=s
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: KT6PRO_Binaries
+          name: KT6PRO_Stable_Binaries
           path: openwrt/bin/targets/qualcommax/ipq50xx/
