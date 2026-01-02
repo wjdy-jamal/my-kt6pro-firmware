@@ -1,0 +1,41 @@
+name: Build-KT6PRO
+on:
+  workflow_dispatch:
+jobs:
+  build_firmware:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup System
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git libncurses5-dev gawk gettext python3 unzip zlib1g-dev libssl-dev
+
+      - name: Clone and Update
+        run: |
+          git clone --depth 1 https://github.com/immortalwrt/immortalwrt.git openwrt
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Setup Config
+        run: |
+          cd openwrt
+          [ -d ../files ] && cp -r ../files/* ./files/ || true
+          echo "CONFIG_TARGET_qualcommax=y" > .config
+          echo "CONFIG_TARGET_qualcommax_ipq60xx=y" >> .config
+          echo "CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_glinet_gl-ax1800=y" >> .config
+          make defconfig
+
+      - name: Compile
+        run: |
+          cd openwrt
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: KT6PRO-Image
+          path: openwrt/bin/targets/qualcommax/ipq60xx/*.bin
