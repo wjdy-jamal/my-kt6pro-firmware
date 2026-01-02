@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Preparation
         run: |
@@ -25,8 +25,10 @@ jobs:
       - name: Inject Files & Configure
         run: |
           cd openwrt
-          [ -d ../files ] && cp -r ../files .
-          chmod +x files/etc/init.d/kt6pro-switch-optimize || true
+          mkdir -p files/etc/config
+          mkdir -p files/etc/init.d
+          [ -d ../files ] && cp -r ../files/* ./files/ || true
+          chmod -R 755 files/etc/init.d/ || true
           echo "CONFIG_TARGET_qualcommax=y" > .config
           echo "CONFIG_TARGET_qualcommax_ipq60xx=y" >> .config
           echo "CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_glinet_gl-ax1800=y" >> .config
