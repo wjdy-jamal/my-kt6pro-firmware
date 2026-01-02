@@ -1,0 +1,44 @@
+name: Build KT6PRO Stable Final
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Preparation
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev
+
+      - name: Clone OpenWrt
+        run: |
+          git clone --depth 1 https://github.com/immortalwrt/immortalwrt.git openwrt
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Inject Files & Configure
+        run: |
+          cd openwrt
+          [ -d ../files ] && cp -r ../files .
+          chmod +x files/etc/init.d/kt6pro-switch-optimize || true
+          echo "CONFIG_TARGET_qualcommax=y" > .config
+          echo "CONFIG_TARGET_qualcommax_ipq60xx=y" >> .config
+          echo "CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_glinet_gl-ax1800=y" >> .config
+          make defconfig
+
+      - name: Compile Firmware
+        run: |
+          cd openwrt
+          make -j$(nproc) || make -j1 V=s
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: KT6PRO-Firmware
+          path: openwrt/bin/targets/qualcommax/ipq60xx/*.bin
